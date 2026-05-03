@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Home, Users, Calendar, GraduationCap, Settings } from 'lucide-react';
+import { Menu, X, Home, Users, Calendar, GraduationCap, Settings, Image as ImageIcon } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const Navbar = ({ activeTab, setActiveTab }) => {
@@ -10,6 +10,7 @@ const Navbar = ({ activeTab, setActiveTab }) => {
     { id: 'donors', label: 'दानदाता', icon: <Users size={18} /> },
     { id: 'events', label: 'कार्यक्रम', icon: <Calendar size={18} /> },
     { id: 'scholars', label: 'प्रतिभाएं', icon: <GraduationCap size={18} /> },
+    { id: 'gallery', label: 'गैलरी', icon: <ImageIcon size={18} /> },
     { id: 'admin', label: 'एडमिन', icon: <Settings size={18} /> }
   ];
 

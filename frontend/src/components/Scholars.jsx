@@ -34,8 +34,12 @@ const Scholars = () => {
 
         <div className="grid-3">
           {scholars.map((scholar) => (
-            <div key={scholar.id} className="card" style={{ textAlign: 'center', paddingTop: '2rem' }}>
-              <Award size={48} color="var(--secondary)" style={{ marginBottom: '1rem' }} />
+            <div key={scholar._id || scholar.id} className="card" style={{ textAlign: 'center', paddingTop: '2rem' }}>
+              {scholar.imageUrl ? (
+                <img src={scholar.imageUrl} alt={scholar.name} loading="lazy" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '50%', margin: '0 auto 1rem auto', border: '3px solid var(--secondary)' }} />
+              ) : (
+                <Award size={48} color="var(--secondary)" style={{ marginBottom: '1rem' }} />
+              )}
               <h3 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>{scholar.name}</h3>
               <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '10px' }}>
                 {scholar.achievement}

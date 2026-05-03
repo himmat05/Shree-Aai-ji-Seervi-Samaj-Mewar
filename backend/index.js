@@ -2,15 +2,38 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { Donor, Event, Scholar } from './models.js';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { Donor, Event, Scholar, Feedback, Gallery } from './models.js';
 
 dotenv.config();
+mongoose.set('strictQuery', false);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'seervi_samaj',
+    allowedFormats: ['jpg', 'png', 'jpeg', 'webp'],
+    transformation: [{ width: 800, crop: 'limit' }, { quality: 'auto' }, { fetch_format: 'auto' }]
+  },
+});
+
+const upload = multer({ storage: storage });
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
@@ -60,9 +83,13 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', upload.single('image'), async (req, res) => {
   try {
-    const newEvent = new Event(req.body);
+    const eventData = { ...req.body };
+    if (req.file) {
+      eventData.imageUrl = req.file.path; // Cloudinary URL
+    }
+    const newEvent = new Event(eventData);
     const saved = await newEvent.save();
     res.json(saved);
   } catch (err) {
@@ -80,14 +107,150 @@ app.get('/api/scholars', async (req, res) => {
   }
 });
 
-app.post('/api/scholars', async (req, res) => {
+app.post('/api/scholars', upload.single('image'), async (req, res) => {
   try {
-    const newScholar = new Scholar(req.body);
+    const scholarData = { ...req.body };
+    if (req.file) {
+      scholarData.imageUrl = req.file.path; // Cloudinary URL
+    }
+    const newScholar = new Scholar(scholarData);
     const saved = await newScholar.save();
     res.json(saved);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Gallery
+app.get('/api/gallery', async (req, res) => {
+  try {
+    const gallery = await Gallery.find().sort({ createdAt: -1 });
+    res.json(gallery);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/gallery', upload.single('image'), async (req, res) => {
+  try {
+    const galleryData = { ...req.body };
+    if (req.file) {
+      galleryData.imageUrl = req.file.path;
+    }
+    const newGallery = new Gallery(galleryData);
+    const saved = await newGallery.save();
+    res.json(saved);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/gallery/:id', async (req, res) => {
+  try {
+    await Gallery.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Feedback
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const feedback = await Feedback.find().sort({ createdAt: -1 });
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const newFeedback = new Feedback(req.body);
+    const saved = await newFeedback.save();
+    res.json(saved);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/feedback/:id', async (req, res) => {
+  try {
+    const updated = await Feedback.findByIdAndUpdate(req.params.id, { status: req.body.status }, { returnDocument: 'after' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Donors - Delete & Update
+app.delete('/api/donors/:id', async (req, res) => {
+  try {
+    await Donor.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/donors/:id', async (req, res) => {
+  try {
+    const updated = await Donor.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Events - Delete & Update
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    await Event.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/events/:id', upload.single('image'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.imageUrl = req.file.path;
+    }
+    const updated = await Event.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Scholars - Delete & Update
+app.delete('/api/scholars/:id', async (req, res) => {
+  try {
+    await Scholar.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/scholars/:id', upload.single('image'), async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.imageUrl = req.file.path;
+    }
+    const updated = await Scholar.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.use((err, req, res, next) => {
+  console.error("Express Error:", err);
+  res.status(500).json({ error: err.message || 'Internal Server Error', details: err });
 });
 
 app.listen(PORT, () => {

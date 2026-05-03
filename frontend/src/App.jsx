@@ -5,7 +5,10 @@ import History from './components/History';
 import Donors from './components/Donors';
 import Events from './components/Events';
 import Scholars from './components/Scholars';
+import Gallery from './components/Gallery';
 import AdminPanel from './components/AdminPanel';
+
+import FeedbackForm from './components/FeedbackForm';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -17,6 +20,11 @@ function App() {
           <>
             <Hero />
             <History />
+            <section className="section bg-light">
+              <div className="container" style={{ maxWidth: '800px' }}>
+                <FeedbackForm />
+              </div>
+            </section>
           </>
         );
       case 'donors':
@@ -25,6 +33,8 @@ function App() {
         return <Events />;
       case 'scholars':
         return <Scholars />;
+      case 'gallery':
+        return <Gallery />;
       case 'admin':
         return <AdminPanel />;
       default:
